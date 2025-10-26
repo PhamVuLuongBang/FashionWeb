@@ -16,7 +16,7 @@ class Admin
      */
     public function handle($request, Closure $next)
     {
-        if (Auth::check() && Auth::user()->role == 'admin') {
+        if (Auth::check() && Auth::user() && Auth::user()->role === 'admin') {  // ← THÊM Auth::user() để tránh null
             return $next($request);
         }
         return redirect()->route('login.form');

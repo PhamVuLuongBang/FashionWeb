@@ -36,4 +36,18 @@ class User extends Authenticatable
         }
         return asset('backend/img/no-image.png');
     }
+    public function notifications()
+    {
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')->orderBy('created_at', 'desc');
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')->whereNull('read_at')->orderBy('created_at', 'desc');
+    }
+
+    public function readNotifications()
+    {
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')->whereNotNull('read_at')->orderBy('created_at', 'desc');
+    }
 }
