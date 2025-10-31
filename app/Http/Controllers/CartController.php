@@ -175,4 +175,24 @@ class CartController extends Controller
     {
         return view('frontend.pages.checkout');
     }
+
+    // =======================
+    // =======================
+    public function index(Request $request)
+    {
+        $carts = Cart::with('product')  // Load relationship với product
+            ->where('user_id', auth()->id())
+            ->whereNull('order_id')  // Chỉ lấy cart chưa checkout
+            ->get();
+
+        $sub_total = 0;
+        $quantity = 0;
+        foreach ($carts as $cart) {
+            $sub_total += $cart->amount;
+            $quantity += $cart->quantity;
+        }
+        $total = $sub_total;  // Nếu có phí ship hoặc thuế, thêm ở đây
+
+        return view('frontend.pages.cart', compact('carts', 'sub_total', 'total', 'quantity'));  // Trả về view cart.blade.php
+    }
 }

@@ -213,15 +213,21 @@
     });
 
 //Test gmail
-Route::get('/test-mail', function () {
-    try {
-        Mail::raw('Xin chào! Đây là email test từ Laravel.', function ($message) {
-            $message->to('your-test-email@gmail.com') // đổi thành email muốn nhận
-                    ->subject('Test gửi mail Laravel');
-        });
+    Route::get('/test-mail', function () {
+        try {
+            Mail::raw('Xin chào! Đây là email test từ Laravel.', function ($message) {
+                $message->to('your-test-email@gmail.com') // đổi thành email muốn nhận
+                        ->subject('Test gửi mail Laravel');
+            });
 
-        return 'Gửi mail thành công!';
-    } catch (\Exception $e) {
-        return ' Lỗi: ' . $e->getMessage();
-    }
-});
+            return 'Gửi mail thành công!';
+        } catch (\Exception $e) {
+            return ' Lỗi: ' . $e->getMessage();
+        }
+    });
+    Route::middleware(['user'])->group(function () {
+        Route::get('/cart', [CartController::class, 'index'])->name('cart');
+        Route::post('/checkout', [OrderController::class, 'store'])->name('checkout');
+        Route::post('/cart/add', [CartController::class, 'addToCart'])->name('cart.add');  
+        Route::post('/cart/single-add', [CartController::class, 'singleAddToCart'])->name('cart.single-add');
+    });
