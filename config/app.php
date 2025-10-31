@@ -235,7 +235,7 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
         // unisharp
         'Image' => Intervention\Image\Facades\Image::class,
-        'PDF' => Barryvdh\DomPDF\Facade::class,
+        'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
         'PayPal' => Srmklive\PayPal\Facades\PayPal::class,
         'Socialite' => Laravel\Socialite\Facades\Socialite::class,
 
