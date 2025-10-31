@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Wishlist;
 use App\Models\Cart;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
@@ -31,7 +31,7 @@ class CartController extends Controller
             return back()->with('error', 'Invalid product');
         }
 
-        $already_cart = Cart::where('user_id', auth()->id())
+        $already_cart = Cart::where('user_id', Auth::id())
             ->whereNull('order_id')
             ->where('product_id', $product->id)
             ->first();
@@ -47,7 +47,7 @@ class CartController extends Controller
             $already_cart->save();
         } else {
             $cart = new Cart;
-            $cart->user_id = auth()->id();
+            $cart->user_id = Auth::id();
             $cart->product_id = $product->id;
             $cart->price = $product->price - ($product->price * $product->discount / 100);
             $cart->quantity = 1;
@@ -60,7 +60,7 @@ class CartController extends Controller
             $cart->save();
 
             // Nếu có trong wishlist thì move qua cart
-            Wishlist::where('user_id', auth()->id())
+            Wishlist::where('user_id', Auth::id())
                 ->whereNull('cart_id')
                 ->update(['cart_id' => $cart->id]);
         }
@@ -87,7 +87,7 @@ class CartController extends Controller
             return back()->with('error', 'Out of stock, you can add other products.');
         }
 
-        $already_cart = Cart::where('user_id', auth()->id())
+        $already_cart = Cart::where('user_id', Auth::id())
             ->whereNull('order_id')
             ->where('product_id', $product->id)
             ->first();
@@ -103,7 +103,7 @@ class CartController extends Controller
             $already_cart->save();
         } else {
             $cart = new Cart;
-            $cart->user_id = auth()->id();
+            $cart->user_id = Auth::id();
             $cart->product_id = $product->id;
             $cart->price = $product->price - ($product->price * $product->discount / 100);
             $cart->quantity = $request->quant;
@@ -116,7 +116,8 @@ class CartController extends Controller
             $cart->save();
         }
 
-        return back()->with('success', 'Product successfully added to cart.');
+        //return back()->with('success', 'Product successfully added to cart.');
+        return redirect()->route('home')->with('success', 'Product successfully added to cart.');
     }
 
     // =======================
@@ -174,25 +175,5 @@ class CartController extends Controller
     public function checkout(Request $request)
     {
         return view('frontend.pages.checkout');
-    }
-
-    // =======================
-    // =======================
-    public function index(Request $request)
-    {
-        $carts = Cart::with('product')  // Load relationship với product
-            ->where('user_id', auth()->id())
-            ->whereNull('order_id')  // Chỉ lấy cart chưa checkout
-            ->get();
-
-        $sub_total = 0;
-        $quantity = 0;
-        foreach ($carts as $cart) {
-            $sub_total += $cart->amount;
-            $quantity += $cart->quantity;
-        }
-        $total = $sub_total;  // Nếu có phí ship hoặc thuế, thêm ở đây
-
-        return view('frontend.pages.cart', compact('carts', 'sub_total', 'total', 'quantity'));  // Trả về view cart.blade.php
     }
 }

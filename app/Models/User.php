@@ -4,7 +4,7 @@ namespace App\Models;
 
 use MongoDB\Laravel\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Notification;
+use Illuminate\Notifications\DatabaseNotification;
 
 class User extends Authenticatable
 {
@@ -13,12 +13,21 @@ class User extends Authenticatable
     protected $connection = 'mongodb';
     protected $collection = 'users';
     protected $fillable = [
-        'name', 'email', 'email_verified_at', 'password', 'photo',
-        'role', 'provider', 'provider_id', 'status', 'remember_token'
+        'name',
+        'email',
+        'email_verified_at',
+        'password',
+        'photo',
+        'role',
+        'provider',
+        'provider_id',
+        'status',
+        'remember_token'
     ];
 
     protected $hidden = [
-        'password', 'remember_token',
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [

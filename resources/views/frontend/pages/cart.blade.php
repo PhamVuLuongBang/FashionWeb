@@ -36,57 +36,61 @@
 							</tr>
 						</thead>
 						<tbody id="cart_item_list">
-							<form action="{{route('cart.update')}}" method="POST">  <!-- Giữ nguyên form update -->
+							<form action="{{route('cart.update')}}" method="POST">
 								@csrf
-								@if($carts->isNotEmpty())  <!-- THAY ĐỔI: Dùng $carts từ controller thay vì Helper -->
-									@foreach($carts as $cart)
+								@if(Helper::getAllProductFromCart())
+									@foreach(Helper::getAllProductFromCart() as $key=>$cart)
 										<tr>
 											@php
-											$photo=explode(',',$cart->product->photo);  // Giữ nguyên, dùng $cart->product (relationship)
+											$photo=explode(',',$cart->product['photo']);
 											@endphp
 											<td class="image" data-title="No"><img src="{{$photo[0]}}" alt="{{$photo[0]}}"></td>
 											<td class="product-des" data-title="Description">
-												<p class="product-name"><a href="{{route('product-detail',$cart->product->slug)}}" target="_blank">{{$cart->product->title}}</a></p>
-												<p class="product-des">{{$cart->product->summary}}</p>  <!-- Giữ nếu cần, hoặc xóa nếu không -->
+												<p class="product-name"><a href="{{route('product-detail',$cart->product['slug'])}}" target="_blank">{{$cart->product['title']}}</a></p>
+												<p class="product-des">{!!($cart['summary']) !!}</p>
 											</td>
-											<td class="price" data-title="Price"><span>{{number_format($cart->price)}} VNĐ</span></td>  <!-- THAY ĐỔI: Dùng $cart->price -->
-											<td class="qty" data-title="Qty"><!-- Input Number -->
+											<td class="price" data-title="Price"><span>${{number_format($cart['price'],2)}}</span></td>
+											<td class="qty" data-title="Qty"><!-- Input Order -->
 												<div class="input-group">
 													<div class="button minus">
-														<button type="button" class="btn btn-primary btn-number" data-type="minus" data-field="quant[{{$loop->iteration}}]">
+														<button type="button" class="btn btn-primary btn-number" disabled="disabled" data-type="minus" data-field="quant[{{$key}}]">
 															<i class="ti-minus"></i>
 														</button>
 													</div>
-													<input type="hidden" name="qty_id[]" value="{{$cart->id}}">  <!-- THAY ĐỔI: Dùng $cart->id cho qty_id -->
-													<input type="text" name="quant[]" class="input-number"  data-min="1" data-max="{{$cart->product->stock}}" value="{{$cart->quantity}}">  <!-- THAY ĐỔI: Dùng $cart->quantity -->
+													<input type="text" name="quant[{{$key}}]" class="input-number"  data-min="1" data-max="100" value="{{$cart->quantity}}">
+													<input type="hidden" name="qty_id[]" value="{{$cart->id}}">
 													<div class="button plus">
-														<button type="button" class="btn btn-primary btn-number" data-type="plus" data-field="quant[{{$loop->iteration}}]">
+														<button type="button" class="btn btn-primary btn-number" data-type="plus" data-field="quant[{{$key}}]">
 															<i class="ti-plus"></i>
 														</button>
 													</div>
 												</div>
-												<!--/ End Input Number -->
+												<!--/ End Input Order -->
 											</td>
-											<td class="total-amount cart_single_total" data-title="Total"><span class="money">{{number_format($cart->amount)}} VNĐ</span></td>  <!-- THAY ĐỔI: Dùng $cart->amount -->
-											<td class="action" data-title="Remove">
-												<form action="{{route('cart.delete')}}" method="POST">  <!-- THAY ĐỔI: Sử dụng form delete với route cart.delete -->
-													@csrf
-													<input type="hidden" name="id" value="{{$cart->id}}">
-													<button type="submit" class="btn btn-link text-danger"><i class="ti-trash remove-icon"></i></button>
-												</form>
-											</td>
+											<td class="total-amount cart_single_price" data-title="Total"><span class="money">${{$cart['amount']}}</span></td>
+
+											<td class="action" data-title="Remove"><a href="{{route('cart-delete',$cart->id)}}"><i class="ti-trash remove-icon"></i></a></td>
 										</tr>
 									@endforeach
-									<tr>
-										<td colspan="6" class="text-right">
-											<button type="submit" class="btn">Update</button>  <!-- Nút submit form update -->
+									<track>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td></td>
+										<td class="float-right">
+											<button class="btn float-right" type="submit">Update</button>
 										</td>
-									</tr>
+									</track>
 								@else
-									<tr>
-										<td colspan="6"><p class="text-center">Giỏ hàng trống.</p></td>
-									</tr>
+										<tr>
+											<td class="text-center">
+												There are no any carts available. <a href="{{route('product-grids')}}" style="color:blue;">Continue shopping</a>
+
+											</td>
+										</tr>
 								@endif
+
 							</form>
 						</tbody>
 					</table>
@@ -101,36 +105,43 @@
 							<div class="col-lg-8 col-md-5 col-12">
 								<div class="left">
 									<div class="coupon">
-										<form action="{{route('coupon.store')}}" method="POST">  <!-- Giữ nguyên phần coupon nếu bạn có -->
+									<form action="{{route('coupon-store')}}" method="POST">
 											@csrf
 											<input name="code" placeholder="Enter Your Coupon">
-											<button class="btn" type="submit">Apply</button>
+											<button class="btn">Apply</button>
 										</form>
 									</div>
-									<div class="checkbox">
-										<div class="shipping-form">  <!-- Giữ nguyên phần shipping nếu cần -->
-											<div class="row">
-												@foreach(Helper::shipping() as $shipping)
-													<div class="col-6">
-														<a href="#" class="btn">{{$shipping->type}}: ${{number_format($shipping->price)}}<input type="hidden" value="{{$shipping->price}}"></a>
-													</div>
-												@endforeach
-											</div>
-										</div>
-									</div>
+									{{-- <div class="checkbox">`
+										@php
+											$shipping=DB::table('shippings')->where('status','active')->limit(1)->get();
+										@endphp
+										<label class="checkbox-inline" for="2"><input name="news" id="2" type="checkbox" onchange="showMe('shipping');"> Shipping</label>
+									</div> --}}
 								</div>
 							</div>
 							<div class="col-lg-4 col-md-7 col-12">
 								<div class="right">
 									<ul>
-										<li>Cart Subtotal<span>{{number_format($sub_total)}} VNĐ</span></li>  <!-- THAY ĐỔI: Dùng $sub_total từ controller -->
-										<li>Shipping<span>Free</span></li>  <!-- Nếu có phí ship, tính thêm vào controller -->
-										<li>You Save<span>{{number_format(0)}} VNĐ</span></li>  <!-- Nếu có discount, thêm logic controller -->
-										<li class="last">You Pay<span>{{number_format($total)}} VNĐ</span></li>  <!-- THAY ĐỔI: Dùng $total -->
+										<li class="order_subtotal" data-price="{{Helper::totalCartPrice()}}">Cart Subtotal<span>${{number_format(Helper::totalCartPrice(),2)}}</span></li>
+
+										@if(session()->has('coupon'))
+										<li class="coupon_price" data-price="{{Session::get('coupon')['value']}}">You Save<span>${{number_format(Session::get('coupon')['value'],2)}}</span></li>
+										@endif
+										@php
+											$total_amount=Helper::totalCartPrice();
+											if(session()->has('coupon')){
+												$total_amount=$total_amount-Session::get('coupon')['value'];
+											}
+										@endphp
+										@if(session()->has('coupon'))
+											<li class="last" id="order_total_price">You Pay<span>${{number_format($total_amount,2)}}</span></li>
+										@else
+											<li class="last" id="order_total_price">You Pay<span>${{number_format($total_amount,2)}}</span></li>
+										@endif
 									</ul>
 									<div class="button5">
-										<a href="{{route('checkout')}}" class="btn">Checkout</a>  <!-- Giữ nguyên route checkout -->
-										<a href="{{route('home')}}" class="btn">Continue shopping</a>
+										<a href="{{route('checkout')}}" class="btn">Checkout</a>
+										<a href="{{route('product-grids')}}" class="btn">Continue shopping</a>
 									</div>
 								</div>
 							</div>
@@ -144,7 +155,7 @@
 	<!--/ End Shopping Cart -->
 
 	<!-- Start Shop Services Area  -->
-	<section class="shop-services section home">
+	<section class="shop-services section">
 		<div class="container">
 			<div class="row">
 				<div class="col-lg-3 col-md-6 col-12">
