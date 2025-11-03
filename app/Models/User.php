@@ -4,7 +4,6 @@ namespace App\Models;
 
 use MongoDB\Laravel\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Notifications\DatabaseNotification;
 
 class User extends Authenticatable
 {

@@ -60,62 +60,87 @@ class FrontendController extends Controller
     }
 
     public function productGrids(){
-        $products=Product::query();
-        
+        // Sử dụng một Query Builder (không get() sớm)
+        $query = Product::query();
+
+        // Lọc theo category nếu có
         if(!empty($_GET['category'])){
-            $slug=explode(',',$_GET['category']);
-            // dd($slug);
-            $cat_ids=Category::select('id')->whereIn('slug',$slug)->pluck('id')->toArray();
-            // dd($cat_ids);
-            $products->whereIn('cat_id',$cat_ids);
-            // return $products;
+            $slug = explode(',', $_GET['category']);
+            $cat_ids = Category::whereIn('slug', $slug)->pluck('_id')->toArray(); // hoặc ->pluck('id') nếu model map id
+            $query->whereIn('cat_id', $cat_ids);
         }
+
+        // Lọc theo brand nếu có
         if(!empty($_GET['brand'])){
-            $slugs=explode(',',$_GET['brand']);
-            $brand_ids=Brand::select('id')->whereIn('slug',$slugs)->pluck('id')->toArray();
-            return $brand_ids;
-            $products->whereIn('brand_id',$brand_ids);
+            $slugs = explode(',', $_GET['brand']);
+            $brand_ids = Brand::whereIn('slug', $slugs)->pluck('_id')->toArray();
+            $query->whereIn('brand_id', $brand_ids);
         }
-        if(!empty($_GET['sortBy'])){
-            if($_GET['sortBy']=='title'){
-                $products=$products->where('status','active')->orderBy('title','ASC');
+
+        // Giá (min / max)
+        if(!empty($_GET['min']) && !empty($_GET['max'])){
+            $query->whereBetween('price', [ (float) $_GET['min'], (float) $_GET['max'] ]);
+        }
+
+        // Tìm kiếm (nếu có)
+        if(!empty($_GET['search'])){
+            $s = trim($_GET['search']);
+            $query->where(function($q) use ($s){
+                $q->where('title','like','%'.$s.'%')
+                ->orWhere('slug','like','%'.$s.'%')
+                ->orWhere('description','like','%'.$s.'%');
+            });
+        }
+
+        // Sort
+        if(!empty($_GET['sort_by'])){
+            switch($_GET['sort_by']){
+                case 'name':
+                    $query->orderBy('title','ASC');
+                    break;
+                case 'price_asc':
+                    $query->orderBy('price','ASC');
+                    break;
+                case 'price_desc':
+                    $query->orderBy('price','DESC');
+                    break;
+                default:
+                    $query->orderBy('_id','DESC');
             }
-            if($_GET['sortBy']=='price'){
-                $products=$products->orderBy('price','ASC');
-            }
+        } else {
+            $query->orderBy('_id','DESC');
         }
 
-        if(!empty($_GET['price'])){
-            $price=explode('-',$_GET['price']);
-            // return $price;
-            // if(isset($price[0]) && is_numeric($price[0])) $price[0]=floor(Helper::base_amount($price[0]));
-            // if(isset($price[1]) && is_numeric($price[1])) $price[1]=ceil(Helper::base_amount($price[1]));
-            
-            $products->whereBetween('price',$price);
-        }
+        // per page
+        $perPage = !empty($_GET['show']) ? (int) $_GET['show'] : 9;
 
-        $recent_products=Product::where('status','active')->orderBy('id','DESC')->limit(3)->get();
-        // Sort by number
-        if(!empty($_GET['show'])){
-            $products=$products->where('status','active')->paginate($_GET['show']);
-        }
-        else{
-            $products=$products->where('status','active')->paginate(9);
-        }
-        // Sort by name , price, category
+        // Luôn gọi paginate trên Query Builder
+        $paginator = $query->where('status','active')->paginate($perPage);
 
-        $products = $products->paginate(12);
-
-        $products = $products->map(function ($product) {
+        // Nếu muốn map/modify item properties, chỉnh trên collection bên trong paginator
+        $paginator->getCollection()->transform(function ($product) {
             if (is_array($product->size)) {
                 $product->size = implode(',', $product->size);
+            }
+            if (is_array($product->color)) {
+                $product->color = implode(',', $product->color);
             }
             return $product;
         });
 
-      
-        return view('frontend.pages.product-grids')->with('products',$products)->with('recent_products',$recent_products);
+        // Recent products / categories / brands cho view (vẫn dùng get() vì đó là tập con)
+        $recent_products = Product::where('status','active')->orderBy('_id','DESC')->limit(3)->get();
+        $categories = Category::where('status','active')->where('parent',1)->orderBy('title','ASC')->get();
+        $brands = Brand::where('status','active')->orderBy('title','ASC')->get();
+
+        return view('frontend.pages.product-grids')
+            ->with('products', $paginator)
+            ->with('recent_products', $recent_products)
+            ->with('categories', $categories)
+            ->with('brands', $brands);
     }
+
+
     public function productLists(){
         $products=Product::query();
         

@@ -38,7 +38,7 @@
           <tbody>
             @foreach($brands as $brand)   
                 <tr>
-                    <td>{{$brand->id}}</td>
+                    <td>{{$brand->_id}}</td>
                     <td>{{$brand->title}}</td>
                     <td>{{$brand->slug}}</td>
                     <td>
@@ -53,7 +53,7 @@
                         <form method="POST" action="{{route('brand.destroy',[$brand->id])}}">
                           @csrf 
                           @method('delete')
-                              <button class="btn btn-danger btn-sm dltBtn" data-id={{$brand->id}} style="height:30px; width:30px;border-radius:50%" data-toggle="tooltip" data-placement="bottom" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                              <button class="btn btn-danger btn-sm dltBtn" data-id={{$brand->_id}} style="height:30px; width:30px;border-radius:50%" data-toggle="tooltip" data-placement="bottom" title="Delete"><i class="fas fa-trash-alt"></i></button>
                         </form>
                     </td>
                     {{-- Delete Modal --}}

@@ -20,6 +20,7 @@ use \UniSharp\LaravelFilemanager\Lfm;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ProductController;
 /*
     |--------------------------------------------------------------------------
     | Web Routes
@@ -148,7 +149,7 @@ Route::group(['prefix' => '/admin', 'middleware' => ['auth', 'admin']], function
     // Category
     Route::resource('/category', 'CategoryController');
     // Product
-    Route::resource('/product', 'ProductController');
+    // Route::resource('/product', 'ProductController');
     // Ajax for sub category
     Route::post('/category/{id}/child', 'CategoryController@getChildByParent');
     // POST category
@@ -224,4 +225,8 @@ Route::get('/test-mail', function () {
     } catch (\Exception $e) {
         return ' Lỗi: ' . $e->getMessage();
     }
+});
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function() {
+    Route::resource('product', ProductController::class);
 });
